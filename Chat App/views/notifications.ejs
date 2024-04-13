@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Notifications</title>
+      <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body>
+    <h1>Notifications</h1>
+     
+<!-- notifications.ejs -->
+<section class="w-3/5 border border-gray-200 max-w-screen-sm min-h-dvh">
+  <div class="font-medium flex justify-around rounded-lg text-start p-8">
+    <span class="mt-2 font-medium text-xl">Notifications : </span>
+    <div class="bg-black-100 text-white-700">
+      <input type="button"   value="get" id="alluser">
+
+    </div>
+  </div>
+
+  <% notifications.forEach(notification => { %>
+    <div class="block w-full px-4 py-2 border-b border-gray-200 cursor-pointer hover:bg-gray-100 hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-700 focus:text-blue-700">
+      <div class="flex">
+        <img
+          class="w-10 h-10 p-1 rounded-full"
+          src="./x.png"
+          
+          alt="Bordered avatar"
+        />
+        <div class="mt-2">
+          <% if (notification.type === 'login') { %>
+            There was a login to your account <%= notification.related_username %> from a new device on <%= notification.date %>. Review it now.
+          <% } else if (notification.type === 'password_reset') { %>
+            Your password was reset on your account. Based on this change, additional changes to your account may be restricted temporarily.
+          <% } else if (notification.type === 'follow') { %>
+            <%= notification.related_username %> followed you
+          <% } else if (notification.type === 'comment') { %>
+            <%= notification.related_username %> commented on your tweets
+          <% } else if (notification.type === 'like') { %>
+            <%= notification.related_username %> liked your Tweet
+            <div class="mt-2"><%= notification.tweetContent %></div>
+          <% } %>
+        </div>
+      </div>
+    </div>
+  <% }); %>
+
+</section>
+
+
+  </body>
+  <script>
+
+  // front ens JavaScript 
+  // frontend.js
+document.addEventListener('DOMContentLoaded', () => {
+  const loadNotifications = async () => {
+    try {
+      const response = await fetch('/notifications');
+      const notifications = await response.json();
+      
+      // Assuming the notifications are returned as JSON from the backend
+      const notificationsContainer = document.getElementById('allusercontent');
+      notificationsContainer.innerHTML = ''; // Clear previous content
+      
+      notifications.forEach(notification => {
+        const notificationDiv = document.createElement('div');
+        notificationDiv.classList.add('block', 'w-full', 'px-4', 'py-2', 'border-b', 'border-gray-200', 'cursor-pointer', 'hover:bg-gray-100', 'hover:text-blue-700', 'focus:outline-none', 'focus:ring-2', 'focus:ring-blue-700', 'focus:text-blue-700');
+        
+        const content = `
+        <div class="flex">
+          <img class="w-10 h-10 p-1 rounded-full" src="${notification.avatarUrl}" alt="Bordered avatar" />
+          <div class="mt-2">${notification.content}</div>
+          </div>
+          `;
+          
+        notificationDiv.innerHTML = content;
+        notificationsContainer.appendChild(notificationDiv);
+      });
+    } catch (error) {
+      console.error('Error loading notifications:', error);
+    }
+  };
+  
+  // Example: Trigger loading notifications when a button is clicked
+  const allUserLink = document.getElementById('alluser');
+  allUserLink.addEventListener('click', loadNotifications);
+});
+</script>
+</html>
