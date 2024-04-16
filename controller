@@ -10,12 +10,13 @@ exports.notification = async (req, res) => {
 exports.getNotifications = async (req, res) => {
   let logger_id = req.user[0][0].id;
   const [notifications] = await connection.query(
-    `SELECT n.*, u.username AS username, t.content AS tweet_content
-    FROM notifications n
-    LEFT JOIN users u ON n.related_user_id = u.id
-    LEFT JOIN tweets t ON n.tweet_id = t.id
-    WHERE n.user_id = 1
-    ORDER BY n.created_at DESC;`,
+    `SELECT n.*, u.username AS username, u2.username AS related_username, t.content AS tweet_content
+      FROM notifications n
+      LEFT JOIN users u ON n.user_id = u.id
+      LEFT JOIN users u2 ON n.related_user_id = u2.id
+      LEFT JOIN tweets t ON n.tweet_id = t.id
+      WHERE n.user_id = ?
+      ORDER BY n.created_at DESC;`,
     [logger_id]
   );
   notifications.forEach(async (notification) => {
