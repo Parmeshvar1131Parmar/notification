@@ -185,3 +185,27 @@ async function getUsersByUsernames(usernames) {
   const [users] = await connection.query('SELECT id, username FROM users WHERE username IN (?)', [usernames]);
   return users;
 }
+
+case 'Post':
+        case 'Comment':
+        case 'Like':
+        case 'Retweet':
+          // Check if the action was performed by a verified user you follow
+          const isVerifiedAction = await isVerifiedUserAction(notification.related_user_id, loggerId);
+
+          if (isVerifiedAction) {
+            notification.section = 'verified'; // Mark the notification for the "verified" section
+          }
+          break;
+
+
+async function isVerifiedUserAction(relatedUserId, loggerId) {
+  const [followedUser] = await connection.query(
+    'SELECT id, is_verified FROM users WHERE id = ? AND is_verified = 1 AND id IN (SELECT following_id FROM followers WHERE follower_id = ?)',
+    [relatedUserId, loggerId]
+  );
+
+  return followedUser.length > 0;
+}
+
+
