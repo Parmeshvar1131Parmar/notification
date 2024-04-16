@@ -114,3 +114,74 @@ async function getUsersByUsernames(usernames) {
   return users;
 }
 
+
+
+
+
+
+const connection = require('../../config/connection');
+
+exports.getNotifications = async (req, res) => {
+  try {
+    const loggerId = req.user[0][0].id;
+
+    // Fetch notifications including mentions
+    const [notifications] = await connection.query(
+      `SELECT n.*, u.username AS username, u2.username AS related_username, t.content AS tweet_content
+      FROM notifications n
+      LEFT JOIN users u ON n.user_id = u.id
+      LEFT JOIN users u2 ON n.related_user_id = u2.id
+      LEFT JOIN tweets t ON n.tweet_id = t.id
+      WHERE n.user_id = ?
+      ORDER BY n.created_at DESC;`,
+      [loggerId]
+    );
+
+    // Process notifications including mentions
+    for (const notification of notifications) {
+      switch (notification.type) {
+        case 'Mention':
+          // Extract mentioned usernames from tweet content using regex
+          const mentionedUsernames = extractMentionedUsernames(notification.tweet_content);
+
+          // Query users by mentioned usernames
+          const mentionedUsers = await getUsersByUsernames(mentionedUsernames);
+
+          // Assign mentioned users to the notification for frontend display
+          notification.mentionedUsers = mentionedUsers;
+          break;
+
+        // Add more cases for other notification types if needed...
+
+        default:
+          console.warn('Unknown notification type:', notification.type);
+          break;
+      }
+    }
+
+    // Send processed notifications to frontend
+    res.status(200).json({ notifications });
+  } catch (error) {
+    console.error('Error while fetching notifications:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+// Helper function to extract mentioned usernames from tweet content
+function extractMentionedUsernames(tweetContent) {
+  const regex = /@(\w+)/g; // Regex to match usernames (starts with @ followed by word characters)
+  const matches = tweetContent.match(regex);
+  if (matches) {
+    return matches.map(match => match.substring(1)); // Remove @ symbol from matches
+  }
+  return [];
+}
+
+// Helper function to query users by usernames
+async function getUsersByUsernames(usernames) {
+  if (usernames.length === 0) {
+    return [];
+  }
+  const [users] = await connection.query('SELECT id, username FROM users WHERE username IN (?)', [usernames]);
+  return users;
+}
