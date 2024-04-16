@@ -21,6 +21,18 @@ exports.getNotifications = async (req, res) => {
   );
   notifications.forEach(async (notification) => {
     switch (notification.type) {
+
+ case 'Mention':
+          // Extract mentioned usernames from tweet content using regex
+          const mentionedUsernames = extractMentionedUsernames(notification.tweet_content);
+
+          // Query users by mentioned usernames
+          const mentionedUsers = await getUsersByUsernames(mentionedUsernames);
+
+          // Assign mentioned users to the notification for frontend display
+          notification.mentionedUsers = mentionedUsers;
+          break;
+
       case "Follow":
         const [followData] = await connection.query(
           `SELECT follower.username AS follower_username, followed.username AS followed_username
@@ -73,4 +85,32 @@ exports.getNotifications = async (req, res) => {
 };
 
 
+
+
+case 'Mention':
+        notificationHTML = `
+          <div>
+            You were mentioned by <strong>${notification.username}</strong> in a tweet:
+            <div>${notification.tweet_content}</div>
+          </div>
+        `;
+        break;
+
+function extractMentionedUsernames(tweetContent) {
+  const regex = /@(\w+)/g; // Regex to match usernames (starts with @ followed by word characters)
+  const matches = tweetContent.match(regex);
+  if (matches) {
+    return matches.map(match => match.substring(1)); // Remove @ symbol from matches
+  }
+  return [];
+}
+
+// Helper function to query users by usernames
+async function getUsersByUsernames(usernames) {
+  if (usernames.length === 0) {
+    return [];
+  }
+  const [users] = await connection.query('SELECT id, username FROM users WHERE username IN (?)', [usernames]);
+  return users;
+}
 
