@@ -15,3 +15,65 @@ WHERE u.id = 1 -- Specify the user ID of the follower
 AND u2.is_verified = 1 -- Filter for verified users
 AND f.current_status = 1 -- Filter for active follow relationship
 ORDER BY n.created_at DESC; -- Order notifications by creation timestamp
+
+
+
+
+
+async function fetchNotifications() {
+  try {
+    let url = window.location.origin + "/notification";
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error("Failed to fetch notifications");
+    }
+    const notifications = await response.json();
+
+    displayNotifications(notifications);
+  } catch (error) {
+    console.error("Error while fetching notifications", error);
+    // Display an error message to the user if fetching failed
+    // For example:
+    // const notificationContainer = document.getElementById("allusercontent");
+    // notificationContainer.innerHTML = "<p>Failed to fetch notifications.</p>";
+  }
+}
+
+function displayNotifications(notifications) {
+  const notificationContainer = document.getElementById("allusercontent");
+
+  if (notifications.length === 0) {
+    // If there are no notifications, display a message
+    notificationContainer.innerHTML = "<p>No notifications to show.</p>";
+  } else {
+    // If notifications are present, display them
+    notificationContainer.innerHTML = "";
+
+    notifications.forEach((notification) => {
+      let notificationHTML = "";
+
+      switch (notification.type) {
+        case "Follow":
+          notificationHTML = `
+            <div class="...">
+              <!-- Follow notification HTML -->
+            </div>`;
+          break;
+        case "Comment":
+          notificationHTML = `
+            <div class="...">
+              <!-- Comment notification HTML -->
+            </div>`;
+          break;
+        // Add cases for other notification types as needed...
+        default:
+          console.warn(`Unknown notification type: ${notification.type}`);
+      }
+
+      notificationContainer.innerHTML += notificationHTML;
+    });
+  }
+}
+
+// Fetch and display notifications when the DOM content is loaded
+window.addEventListener("DOMContentLoaded", fetchNotifications);
