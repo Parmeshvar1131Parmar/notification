@@ -1,0 +1,79 @@
+SELECT n.*, u.username AS notifier_username, u2.username AS related_username,
+       t.content AS tweet_content,
+       CASE
+           WHEN TIMESTAMPDIFF(SECOND, t.created_at, NOW()) < 60 THEN CONCAT(TIMESTAMPDIFF(SECOND, t.created_at, NOW()), ' seconds ago')
+           WHEN TIMESTAMPDIFF(MINUTE, t.created_at, NOW()) < 60 THEN CONCAT(TIMESTAMPDIFF(MINUTE, t.created_at, NOW()), ' minutes ago')
+           WHEN TIMESTAMPDIFF(HOUR, t.created_at, NOW()) < 24 THEN CONCAT(TIMESTAMPDIFF(HOUR, t.created_at, NOW()), ' hours ago')
+           ELSE CONCAT(DATE_FORMAT(t.created_at, '%d'), ' ', DATE_FORMAT(t.created_at, '%M'))
+       END AS time_elapsed
+FROM notifications n
+JOIN users u ON n.user_id = u.id -- Join to get the notifier's username
+JOIN users u2 ON n.related_user_id = u2.id -- Join to get the related user's username (the verified user)
+JOIN followers f ON u.id = f.following_id AND u2.id = f.follower_id -- Join to check if user 1 (follower) is following the related user (verified user)
+LEFT JOIN tweets t ON n.tweet_id = t.id -- Join to get tweet details (if applicable)
+WHERE u.id = 1 -- Specify the user ID of the follower
+AND u2.is_verified = 1 -- Filter for verified users
+AND f.current_status = 1 -- Filter for active follow relationship
+ORDER BY n.created_at DESC; -- Order notifications by creation timestamp
+
+
+
+
+
+async function fetchNotifications() {
+  try {
+    let url = window.location.origin + "/notification";
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error("Failed to fetch notifications");
+    }
+    const notifications = await response.json();
+
+    displayNotifications(notifications);
+  } catch (error) {
+    console.error("Error while fetching notifications", error);
+    // Display an error message to the user if fetching failed
+    // For example:
+    // const notificationContainer = document.getElementById("allusercontent");
+    // notificationContainer.innerHTML = "<p>Failed to fetch notifications.</p>";
+  }
+}
+
+function displayNotifications(notifications) {
+  const notificationContainer = document.getElementById("allusercontent");
+
+  if (notifications.length === 0) {
+    // If there are no notifications, display a message
+    notificationContainer.innerHTML = "<p>No notifications to show.</p>";
+  } else {
+    // If notifications are present, display them
+    notificationContainer.innerHTML = "";
+
+    notifications.forEach((notification) => {
+      let notificationHTML = "";
+
+      switch (notification.type) {
+        case "Follow":
+          notificationHTML = `
+            <div class="...">
+              <!-- Follow notification HTML -->
+            </div>`;
+          break;
+        case "Comment":
+          notificationHTML = `
+            <div class="...">
+              <!-- Comment notification HTML -->
+            </div>`;
+          break;
+        // Add cases for other notification types as needed...
+        default:
+          console.warn(`Unknown notification type: ${notification.type}`);
+      }
+
+      notificationContainer.innerHTML += notificationHTML;
+    });
+  }
+}
+
+// Fetch and display notifications when the DOM content is loaded
+window.addEventListener("DOMContentLoaded", fetchNotifications);
